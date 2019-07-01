@@ -5,6 +5,7 @@ require 'cuenta_digital/coupon'
 require 'cuenta_digital/response'
 require 'cuenta_digital/exception'
 
+require 'digest'
 require 'net/http'
 require 'uri'
 require 'nokogiri'

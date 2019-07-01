@@ -30,12 +30,14 @@ module CuentaDigital
                   :second_due_date, # Segunda fecha de vencimiento
                   :email_to, # Enviado hacia un email.
                   :country, # Pais (codigos iso)
-                  :lang # Idioma (codigos iso)
+                  :lang, # Idioma (codigos iso)
+                  :error,
+                  :exception
 
     def initialize(params)
       parser = Nori.new(convert_tags_to: proc { |tag| tag.snakecase.to_sym })
       @request = parser.parse(params)[:request]
-      @action = @request[:action]
+      @action = @request[:action].gsub(/::/, '/').gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').gsub(/([a-z\d])([A-Z])/,'\1_\2').tr('-', '_').downcase.to_sym
       @merchant_id = @request[:invoice][:merchantid]
       @ipaddress = @request[:invoice][:ipaddress]
       @payment_code_1 = @request[:invoice][:paymentcode1]
@@ -63,6 +65,14 @@ module CuentaDigital
       @email_to = @request[:invoice][:emailto]
       @country = @request[:invoice][:country]
       @lang = @request[:invoice][:lang]
+    rescue => e
+      @exception = e
+      @error = params
+      @action = :error unless @action == :invoice_generated
+    end
+
+    def invoice_generated?
+      @action == :invoice_generated
     end
   end
 end

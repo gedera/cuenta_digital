@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module CuentaDigital
-  # c = CuentaDigital::Coupon.new(id: "643232", price: 15.00, first_due_date: 1, site: 'Zorchalandia', code: "IPA", email_from: "admin@zorcha.com", email_to: 'gab.edera@gmail.com', concept: 'Probando gema de ruby', currency: :ars)
+  # c = CuentaDigital::Coupon.new(id: "643232", price: 15.00, first_due_date: 1, site: 'Zorchalandia', code: "IPA", email_from: "admin@zorcha.com", email_to: 'gab.edera@gmail.com', concept: 'Probando gema de ruby', currency: :ars, key_hash: "d7151db7-594a-450a-9d-d9cb4eca8819")
   class Coupon
     ATTRIBUTES_PRECENSE = %i[id price first_due_date code concept currency].freeze
 
@@ -34,7 +34,7 @@ module CuentaDigital
       @email_to = params[:email_to].nil? || params[:email_to].empty? ? nil : params[:email_to]
       @concept = params[:concept]
       @currency = params[:currency] ? params[:currency].to_sym : nil
-      @hash = params[:hash]
+      @hash = Digest::MD5.hexdigest(params[:key_hash]) if params[:key_hash]
       @price_second_due_date = params[:price_second_due_date]
       @second_due_date = params[:second_due_date]
       @m0 = params[:m0] || 0
@@ -63,22 +63,25 @@ module CuentaDigital
       attr_params.delete_if { |k, v| v.nil? }
     end
 
-    def generate(xml: true, wget: false)
+    def uri(xml: true)
       uri_params = params
       uri_params[:xml] = 1 if xml
 
-      uri = CuentaDigital.uri_coupon_generation
+      uri_request = CuentaDigital.uri_coupon_generation
 
-      uri.query = URI.encode_www_form(uri_params.to_a)
+      uri_request.query = URI.encode_www_form(uri_params.to_a)
 
-      puts uri.to_s
+      uri_request
+    end
 
+    def generate(xml: true, wget: false)
       if wget
         @response_code = '200'
-        @response_body = `wget -O- "#{uri.to_s}"`
+        @response_body = `wget -O- "#{uri(xml: xml).to_s}"`
       else
-        @response_code = Net::HTTP.get_response(uri)
-        @response_body = Net::HTTP.get_response(uri)
+        partial_response = Net::HTTP.get_response(uri(xml: xml))
+        @response_code = partial_response.code
+        @response_body = partial_response.body
       end
     rescue => e
       raise e
@@ -89,7 +92,7 @@ module CuentaDigital
     end
 
     def generated?
-      response[:request][:action] == 'INVOICE_GENERATED'
+      response.invoice_generated?
     end
 
     def valid?
