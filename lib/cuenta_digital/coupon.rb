@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 module CuentaDigital
-  # c = CuentaDigital::Coupon.new(id: "643232", price: 15.00, first_due_date: 1, site: 'Zorchalandia', code: "IPA", email_from: "admin@zorcha.com", email_to: 'gab.edera@gmail.com', concept: 'Probando gema de ruby', currency: :ars, key_hash: "d7151db7-594a-450a-9d-d9cb4eca8819")
   class Coupon
     ATTRIBUTES_PRECENSE = %i[id price first_due_date code concept currency].freeze
 
@@ -75,16 +74,23 @@ module CuentaDigital
     end
 
     def generate(xml: true, wget: false)
-      if wget
-        @response_code = '200'
-        @response_body = `wget -O- "#{uri(xml: xml).to_s}"`
-      else
-        partial_response = Net::HTTP.get_response(uri(xml: xml))
-        @response_code = partial_response.code
-        @response_body = partial_response.body
+      retries = 0
+      begin
+        if wget
+          @response_code = '200'
+          @response_body = `wget -O- "#{uri(xml: xml).to_s}"`
+        else
+          partial_response = Net::HTTP.get_response(uri(xml: xml))
+          @response_code = partial_response.code
+          @response_body = partial_response.body
+        end
+      rescue => e
+        if retries < 3
+          retries += 1
+          retry
+        end
+        raise e
       end
-    rescue => e
-      raise e
     end
 
     def response
