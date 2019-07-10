@@ -5,7 +5,7 @@ module CuentaDigital
     ATTRIBUTES_PRECENSE = %i[id price first_due_date code concept currency].freeze
 
     attr_accessor :id, # Su numero de CuentaDigital
-                  :site,
+                  :site, # Nombre de la company
                   :price, # El monto a cobrar (Debe de incluir 2 cifras adicionales que indicaran los centavos)
                   :first_due_date, # Dias desde la fecha actual hasta el vencimiento del cupon
                   :code, # Codigo para referencia del pago para integracion con sus sistemas, referencia del vendedor. (La referencia no puede superar el maximo de 50 caracteres alfanumericos)
@@ -84,6 +84,7 @@ module CuentaDigital
           @response_code = partial_response.code
           @response_body = partial_response.body
         end
+        response
       rescue => e
         if retries < 3
           retries += 1
