@@ -45,7 +45,7 @@ Or install it yourself as:
 #### Example
 
 ```ruby
-coupon = CuentaDigital::Coupon.new(id: '643232', 
+coupon = CuentaDigital::Coupon.new(id: '643233',
                                    price: 15.00, 
                                    first_due_date: 10,
                                    site: 'Zorchalandia', 
