@@ -17,6 +17,7 @@ module CuentaDigital
                   :checksum,
                   :operation_event_number,
                   :bar_code,
+                  :secret,
                   :csv_line
 
     def initialize(params = {})
@@ -32,6 +33,7 @@ module CuentaDigital
       @checksum = params[:checksum]
       @bar_code = params[:bar_code]
       @csv_line = params[:csv_line]
+      @secret = params[:secret]
     end
 
     def credit?
@@ -46,7 +48,7 @@ module CuentaDigital
     # CSV: Clase de operacion,Fecha de la operacion,Hora de la operacion,Monto,Codigo de Barras,Referencia,Medio de pago,Codigo unico de operacion,Checksum de operacion,Numero de operacion en evento
     # Linea final:
     # CSV: Valor fijo 3 indicando linea final,Fecha actual,Horario actual,Monto total de creditos en evento,Monto total de debitos en evento,Cantidad de operaciones,Checksum
-    def self.process_webhook(csv)
+    def self.process_webhook(csv, secret = nil)
       csv_splitted = csv.split("\n")
       _final_line = csv_splitted.pop
 
@@ -55,6 +57,7 @@ module CuentaDigital
 
         params = {
           csv_line: result,
+          secret: secret,
           operation_kind: args[0],
           payment_date: Time.parse(
             [
@@ -71,8 +74,34 @@ module CuentaDigital
           operation_event_number: args[9]
         }
 
+        params[:secret] = if secret
+                            [args[0],
+                             args[1].delete('-'),
+                             args[2].delete(':'),
+                             args[3],
+                             args[4],
+                             args[5],
+                             args[7],
+                             secret].sum
+                          end
+
         CuentaDigital::Payment.new(params)
       end
+    end
+
+    # El Checksum de la operacion (firma) corresponde a una encriptacion SHA256 concatenando:
+    # - la clase de operacion,
+    # - la fecha de la operacion,
+    # - hora de la operacion,
+    # - Monto,
+    # - Codigo de Barras,
+    # - Referencia,
+    # - Codigo unico de operacion
+    # - clave de seguridad
+    # ash('sha256',ClaseDDMMYYYHHMMSSMontoBarraReferenciaUnicoClave),
+    # su finalidad es la validacion de la operacion.
+    def secret_valid?
+      Digest::SHA256.hexdigest(@secret) == @checksum if secret.present?
     end
 
     def self.uri(control:, sandbox: false, date: Time.now, from: nil, to: nil)
