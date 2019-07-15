@@ -16,7 +16,8 @@ module CuentaDigital
                   :payment_number,
                   :checksum,
                   :operation_event_number,
-                  :bar_code
+                  :bar_code,
+                  :csv_line
 
     def initialize(params = {})
       @operation_id = params[:operation_id]
@@ -30,6 +31,15 @@ module CuentaDigital
       @payment_number = params[:payment_number]
       @checksum = params[:checksum]
       @bar_code = params[:bar_code]
+      @csv_line = params[:csv_line]
+    end
+
+    def credit?
+      @operation_kind == 1
+    end
+
+    def debit?
+      @operation_kind == 0
     end
 
     # Linea de operaciones:
@@ -44,6 +54,7 @@ module CuentaDigital
         args = result.split(',')
 
         params = {
+          csv_line: result,
           operation_kind: args[0],
           payment_date: Time.parse(
             [
@@ -130,6 +141,7 @@ module CuentaDigital
         args = result.split('|')
 
         params = {
+          csv_line: result,
           operation_kind: 1, # Credit
           payment_date: Time.parse(
             [

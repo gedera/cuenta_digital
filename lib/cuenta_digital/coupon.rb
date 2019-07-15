@@ -102,6 +102,10 @@ module CuentaDigital
       response.invoice_generated?
     end
 
+    def error?
+      response.error?
+    end
+
     def valid?
       validate!
       errors.empty?

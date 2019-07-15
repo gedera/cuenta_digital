@@ -74,5 +74,9 @@ module CuentaDigital
     def invoice_generated?
       @action == :invoice_generated
     end
+
+    def error?
+      @action == :error
+    end
   end
 end

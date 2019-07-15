@@ -45,7 +45,8 @@ Or install it yourself as:
 #### Example
 
 ```ruby
-coupon = CuentaDigital::Coupon.new(id: '643233',
+coupon = CuentaDigital::Coupon.new(id: '643233
+',
                                    price: 15.00, 
                                    first_due_date: 10,
                                    site: 'Zorchalandia', 
@@ -128,6 +129,7 @@ This method return `CuentaDigital::Response` object
 - **checksum**
 - **operation_event_number**
 - **bar_code**
+- **csv_line**
 
 #### Methods
 
