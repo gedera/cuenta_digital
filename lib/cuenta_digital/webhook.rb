@@ -18,7 +18,7 @@ module CuentaDigital
   # ash('sha256',ClaseDDMMYYYHHMMSSMontoBarraReferenciaUnicoClave),
   # su finalidad es la validacion de la operacion.
   class Webhook
-    def self.process_webhook(csv, secret = nil)
+    def self.process(csv, secret = nil)
       csv_splitted = csv.split("\n")
       _final_line = csv_splitted.pop
 
