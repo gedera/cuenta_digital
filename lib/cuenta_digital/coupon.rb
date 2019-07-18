@@ -2,7 +2,7 @@
 
 module CuentaDigital
   class Coupon
-    ATTRIBUTES_PRECENSE = %i[id price first_due_date code concept currency].freeze
+    ATTRIBUTES_PRECENSE = %i[id code concept currency].freeze
 
     attr_accessor :id, # Su numero de CuentaDigital
                   :site, # Nombre de la company
