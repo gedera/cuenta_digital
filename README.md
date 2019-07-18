@@ -131,16 +131,6 @@ This method return `CuentaDigital::Response` object
 - **bar_code**
 - **csv_line**
 
-#### Methods
-
-- [class method] `process_webhook`:
-
-```ruby
-CuentaDigital::Payment.process_webhook(csv) # String csv separated by ','
-```
-
-return arrays of `CuentaDigital::Payment`
-
 - [class method] `request`. Only get transactions completed
 
 
@@ -163,6 +153,19 @@ return arrays of `CuentaDigital::Payment`
 ```ruby
 CuentaDigital::Payment.request(control: 'e9161bfccfba345237fb1311b890203f', date: Time.new(2019, 07, 01), opts: { wget: false, sandbox: true })
 ```
+
+### Webhook
+
+#### Methods
+
+- [class method] `process`:
+
+```ruby
+CuentaDigital::Payment.process(csv) # String csv separated by ','
+```
+
+return arrays of `CuentaDigital::Payment`
+
 
 ## Development
 
