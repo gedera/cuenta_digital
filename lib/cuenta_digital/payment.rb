@@ -17,6 +17,7 @@ module CuentaDigital
                   :checksum,
                   :operation_event_number,
                   :bar_code,
+                  :secret,
                   :csv_line
 
     def initialize(params = {})
@@ -32,6 +33,7 @@ module CuentaDigital
       @checksum = params[:checksum]
       @bar_code = params[:bar_code]
       @csv_line = params[:csv_line]
+      @secret = params[:secret]
     end
 
     def credit?
@@ -42,37 +44,8 @@ module CuentaDigital
       @operation_kind == 0
     end
 
-    # Linea de operaciones:
-    # CSV: Clase de operacion,Fecha de la operacion,Hora de la operacion,Monto,Codigo de Barras,Referencia,Medio de pago,Codigo unico de operacion,Checksum de operacion,Numero de operacion en evento
-    # Linea final:
-    # CSV: Valor fijo 3 indicando linea final,Fecha actual,Horario actual,Monto total de creditos en evento,Monto total de debitos en evento,Cantidad de operaciones,Checksum
-    def self.process_webhook(csv)
-      csv_splitted = csv.split("\n")
-      _final_line = csv_splitted.pop
-
-      csv_splitted.map do |result|
-        args = result.split(',')
-
-        params = {
-          csv_line: result,
-          operation_kind: args[0],
-          payment_date: Time.parse(
-            [
-              args[1].insert(2, '-').insert(5, '-'),
-              args[2].insert(2, ':').insert(5, ':')
-            ].join(' ')
-          ),
-          net_amount: args[3],
-          bar_code: args[4],
-          reference: args[5],
-          payment_method: args[6],
-          operation_id: args[7],
-          checksum: args[8],
-          operation_event_number: args[9]
-        }
-
-        CuentaDigital::Payment.new(params)
-      end
+    def secret_valid?
+      secret.nil? || Digest::SHA256.hexdigest(@secret) == @checksum
     end
 
     def self.uri(control:, sandbox: false, date: Time.now, from: nil, to: nil)
@@ -111,7 +84,7 @@ module CuentaDigital
     # Fecha del cobro|Horario de la operacion (HHmmss)|Monto Bruto|Monto neto recibido|Comision|Su referencia|Medio de pago usado|Codigo interno unico de operacion|Cobro numero 1 del archivo
     # Ejemplo de una linea del archivo:
     # 30122008|221500|1000.50|999.50|1.00|cliente9879|PagoFacil|23a0f1c7b636c08660abbe4f02360633-de70dbb3f907c613ddce6566667f92c6|1
-    def self.request(control:, date: Time.now, from: nil, to: nil, opts: { wget: false, sandbox: false })
+    def self.collector(control:, date: Time.now, from: nil, to: nil, opts: { wget: false, sandbox: false })
       retries = 0
 
       uri_request = uri(control: control, sandbox: opts[:sandbox], date: date, from: from, to: to)

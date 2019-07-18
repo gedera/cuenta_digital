@@ -4,6 +4,7 @@ require 'cuenta_digital/version'
 require 'cuenta_digital/coupon'
 require 'cuenta_digital/response'
 require 'cuenta_digital/payment'
+require 'cuenta_digital/webhook'
 require 'cuenta_digital/exception'
 
 require 'digest'
