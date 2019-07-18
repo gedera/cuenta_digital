@@ -74,6 +74,8 @@ module CuentaDigital
     end
 
     def generate(xml: true, wget: false)
+      return false unless valid?
+
       retries = 0
       begin
         if wget
@@ -118,6 +120,8 @@ module CuentaDigital
       validate_attributes_presence
       validate_standar_values
       validate_format_values
+      validate_dates
+      valideate_lengths
     end
 
     def validate_attributes_presence
@@ -128,23 +132,67 @@ module CuentaDigital
 
       missing_attributes.uniq.each do |attr|
         @errors[attr.to_sym] = [] unless errors.key?(attr)
-        @errors[attr.to_sym] << CuentaDigital::Exception::MissingAttributes.new(attr).message
+        @errors[attr.to_sym] << [
+          :cant_be_blank,
+          CuentaDigital::Exception::MissingAttributes.new(attr).message
+        ]
+      end
+
+      if @first_due_date.blank? && !@second_due_date.blank?
+        @errors[:first_due_date] = [] unless errors.key?(:first_due_date)
+        @errors[:first_due_date] << [
+          :cant_be_blank,
+          CuentaDigital::Exception::MissingAttributes.new(:first_due_date).message
+        ]
+      end
+
+      if @amount.blank? && !@second_amount.blank?
+        @errors[:amount] = [] unless errors.key?(:amount)
+        @errors[:amount] << [
+          :cant_be_blank,
+          CuentaDigital::Exception::MissingAttributes.new(:amount).message
+        ]
       end
     end
 
     def validate_standar_values
-      return if CuentaDigital::CURRENCIES.keys.include?(@currency)
+      return if CuentaDigital::CURRENCIES.key?(@currency)
 
       @errors[:currency] = [] unless errors.key?(:currency)
-
-      @errors[:currency] << CuentaDigital::Exception::InvalidValueAttribute.new("currency, Possible values #{CuentaDigital::CURRENCIES.keys}").message
+      @errors[:currency] << [
+        :unsupported_value,
+        CuentaDigital::Exception::InvalidValueAttribute.new("currency, Possible values #{CuentaDigital::CURRENCIES.keys}").message
+      ]
     end
 
     def validate_format_values
       return if @email_to.nil? || !@email_to.match(CuentaDigital::VALID_EMAIL_REGEX).nil?
 
       @errors[:email_to] = [] unless errors.key?(:email_to)
-      @errors[:email_to] << CuentaDigital::Exception::InvalidFormat.new(attr).message
+      @errors[:email_to] << [
+        :invalid_format,
+        CuentaDigital::Exception::InvalidFormat.new(attr).message
+      ]
+    end
+
+    def validate_dates
+      return unless (@first_due_date && @second_due_date) && @second_due_date <= @first_due_date
+
+      @errors[:second_due_date] = [] unless errors.key?(:second_due_date)
+      @errors[:second_due_date] << [
+        :second_due_date_must_be_greater_than_first_due_date,
+        CuentaDigital::Exception::InvalidValueAttribute.new('second due date cant be greater than or equal to first due date').message
+      ]
+    end
+
+    def valideate_lengths
+      return if code.size <= 50
+
+      @errors[:code] = [] unless errors.key?(:code)
+      @errors[:code] << [
+        :code_must_be_greater_than_50_characters,
+        CuentaDigital::Exception::InvalidValueAttribute.new('code cant be greater than 50 chars').message
+      ]
     end
   end
 end
